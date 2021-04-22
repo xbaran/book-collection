@@ -74,7 +74,7 @@ mvn -pl api docker:push -P psql
 
 ## Application properties
 
-###Profiles
+ ###Profiles
 
  Only one of DB profile should be use, if none selected h2 profile is used.
  
@@ -122,23 +122,33 @@ Precondition is to have `docker` cli and docker deamon.
 
 Run mysql database:
 
-```docker run -d --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_USER=slido -e MYSQL_PASSWORD=slido -e MYSQL_DATABASE=slido  mysql:5.6```
+```
+docker run -d --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_USER=slido -e MYSQL_PASSWORD=slido -e MYSQL_DATABASE=slido  mysql:5.6
+```
 
 Run psql database:
 
-```docker run -d --name psql -p 5432:5432 -e POSTGRES_USER=slido -e POSTGRES_PASSWORD=slido -e POSTGRES_DB=slido  postgres:11```
+```
+docker run -d --name psql -p 5432:5432 -e POSTGRES_USER=slido -e POSTGRES_PASSWORD=slido -e POSTGRES_DB=slido  postgres:11
+```
 
 Run application with embedded h2:
 
-```docker run -it --rm --name book-collection-h2 -e SPRING_PROFILES_ACTIVE=default,h2,swagger,init -p 8080:8080 mbaran/book-collection-app:h2-1.0-SNAPSHOT```
+```
+docker run -it --rm --name book-collection-h2 -e SPRING_PROFILES_ACTIVE=default,h2,swagger,init -p 8080:8080 mbaran/book-collection-app:h2-1.0-SNAPSHOT
+```
 
 Run application with mysql:
 
-```docker run -it --rm --name book-collection-mysql -e SPRING_PROFILES_ACTIVE=default,mysql,swagger,init --link mysql:mysql -e SLIDO_MYSQL_HOST=mysql -p 8080:8080 mbaran/book-collection-app:mysql-1.0-SNAPSHOT```
+```
+docker run -it --rm --name book-collection-mysql -e SPRING_PROFILES_ACTIVE=default,mysql,swagger,init --link mysql:mysql -e SLIDO_MYSQL_HOST=mysql -p 8080:8080 mbaran/book-collection-app:mysql-1.0-SNAPSHOT
+```
 
 Run application with psql:
 
-```docker run -it --rm --name book-collection-psql -e SPRING_PROFILES_ACTIVE=default,psql,swagger,init --link psql:psql -e SLIDO_PSQL_HOST=psql -p 8080:8080 mbaran/book-collection-app:psql-1.0-SNAPSHOT```
+```
+docker run -it --rm --name book-collection-psql -e SPRING_PROFILES_ACTIVE=default,psql,swagger,init --link psql:psql -e SLIDO_PSQL_HOST=psql -p 8080:8080 mbaran/book-collection-app:psql-1.0-SNAPSHOT
+```
 
 Cleanup dbs
 
