@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <property name="pattern" value="[%5.5level] [%d{dd.MM.yyyy HH:mm:ss.SSS}] [%X{TRACE}] [%18.18thread] [%30.30logger{4}]: %m%n" scope="context"/>
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${pattern}</pattern>
+        </encoder>
+    </appender>
+        <logger name="org.hibernate" level="ERROR" />
+<!--    <logger name="org.hibernate.type" level="TRACE" />-->
+<!--    <logger name="org.hibernate.SQL" level="DEBUG" />-->
+<!--    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" />-->
+<!--    <logger name="org.springframework.transaction" level="DEBUG" />-->
+<!--    <logger name="org.springframework.orm.jpa" level="DEBUG" />-->
+    <logger name="org.springframework" level="INFO" />
+
+    <!-- Root Logger -->
+    <root level="INFO">
+        <appender-ref ref="console"/>
+    </root>
+
+</configuration>

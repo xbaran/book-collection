@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: book-collection-psql
+    service: book-collection-psql
+  name: postgres
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: psql
+      protocol: TCP
+  selector:
+    app: book-collection-psql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: book-collection-psql
+    version: v11
+  name: postgres
+spec:
+  selector:
+    matchLabels:
+      app: book-collection-psql
+      version: v11
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: book-collection-psql
+        version: v11
+    spec:
+      containers:
+        - image: postgres:11
+          name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: slido
+            - name: POSTGRES_PASSWORD
+              value: slido
+            - name: POSTGRES_DATABASE
+              value: slido
+          ports:
+            - containerPort: 5432
+              name: psql
+          volumeMounts:
+            - name: postgres-persistent-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-persistent-storage
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: book-collection-app
+    version: psql-1.0-SNAPSHOT
+  name: book-collection-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: book-collection-app
+  template:
+    metadata:
+      labels:
+        app: book-collection-app
+        version: psql-1.0-SNAPSHOT
+    spec:
+      containers:
+        - args:
+          env:
+            - name: SLIDO_PSQL_HOST
+              value: "postgres"
+            - name: SWAGGER_BASE_PATH
+              value: "localhost:8080"
+            - name: SERVER_SERVLET_CONTEXT-PATH
+              value: "/psql"
+            - name: JAVA_OPTS
+              value: "-Xmx512m"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "default,psql,swagger,init"
+          image: mbaran/book-collection-app:psql-1.0-SNAPSHOT
+          imagePullPolicy: Always
+          name: book-collection-app
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1024Mi"
+              cpu: "500m"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: book-collection-app
+    service: book-collection-app
+  name: book-collection-app
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  selector:
+    app: book-collection-app
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: book-collection-app-gateway
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /psql
+            pathType: Prefix
+            backend:
+              service:
+                name: book-collection-app
+                port:
+                  number: 80

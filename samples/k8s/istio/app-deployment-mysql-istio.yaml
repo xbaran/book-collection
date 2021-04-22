@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: book-collection-mysql
+    service: book-collection-mysql
+  name: mysql
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+      name: mysql
+      protocol: TCP
+  selector:
+    app: book-collection-mysql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: book-collection-mysql
+    version: v5.6
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: book-collection-mysql
+      version: v5.6
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: book-collection-mysql
+        version: v5.6
+    spec:
+      containers:
+        - image: mysql:5.6
+          name: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: root
+            - name: MYSQL_USER
+              value: slido
+            - name: MYSQL_PASSWORD
+              value: slido
+            - name: MYSQL_DATABASE
+              value: slido
+          ports:
+            - containerPort: 3306
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: book-collection-app
+    version: mysql-1.0-SNAPSHOT
+  name: book-collection-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: book-collection-app
+  template:
+    metadata:
+      labels:
+        app: book-collection-app
+        version: mysql-1.0-SNAPSHOT
+    spec:
+      containers:
+        - args:
+          env:
+          - name: SLIDO_MYSQL_HOST
+            value: "mysql"
+          - name: SWAGGER_BASE_PATH
+            value: "localhost:9080"
+          - name: SERVER_SERVLET_CONTEXT-PATH
+            value: "/mysql"
+          - name: JAVA_OPTS
+            value: "-Xmx350m"
+          - name: SPRING_PROFILES_ACTIVE
+            value: "default,mysql,swagger"
+          image: mbaran/book-collection-app:mysql-1.0-SNAPSHOT
+          imagePullPolicy: Always
+          name: book-collection-app
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: book-collection-app
+    service: book-collection-app
+  name: book-collection-app
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  selector:
+    app: book-collection-app
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: book-collection-app-gateway
+  annotations:
+    kubernetes.io/ingress.class: "istio"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /mysql
+            pathType: Prefix
+            backend:
+              service:
+                name: book-collection-app
+                port:
+                  number: 80
